@@ -1,0 +1,36 @@
+# Fly.io config: one machine with the Express server (API + built web app).
+app = "monchys-ia"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3001"
+  COOKIE_SECURE = "true"
+
+# Users, purchases and uploads: persistent volume (fly volumes create monchys_data)
+[mounts]
+  source = "monchys_data"
+  destination = "/app/server/data"
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  # Keep one machine running: the data volume belongs to a single machine
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "30s"
+    interval = "30s"
+    timeout = "5s"
+    method = "GET"
+    path = "/api/products"
+
+[[vm]]
+  memory = "2gb"
+  cpu_kind = "shared"
+  cpus = 1

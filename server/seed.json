@@ -1,0 +1,399 @@
+[
+  {
+    "id": "RES-01",
+    "name": "Asistente de reservas con IA",
+    "price": 29,
+    "period": "month",
+    "category": "NEGOCIOS",
+    "icon": "calendar",
+    "desc": "Atiende a tus clientes 24/7 y agenda citas automáticamente.",
+    "details": "Responde preguntas frecuentes, ofrece los horarios libres y confirma citas por chat o con un formulario sencillo. Tú ves todas las citas en tu panel. Ideal para barberías, salones, clínicas y consultorios.\n\nPróximamente: recordatorios automáticos y reservas por WhatsApp.",
+    "specs": {
+      "Canales": "Página web propia (WhatsApp pronto)",
+      "Citas": "Ilimitadas",
+      "Recordatorios": "Próximamente",
+      "Idiomas": "Español / Inglés",
+      "Panel": "Agenda de citas en tu panel"
+    },
+    "published": true,
+    "createdAt": "2026-10-26T02:55:46.879Z",
+    "updatedAt": "2026-10-26T02:55:46.879Z",
+    "demoUrl": "/reservar/demo",
+    "toolUrl": "/herramientas/reservas",
+    "includes": []
+  },
+  {
+    "id": "PLUS-01",
+    "name": "Monchys Plus — todo incluido",
+    "price": 12,
+    "period": "month",
+    "category": "PLANES",
+    "icon": "crown",
+    "desc": "Todas las herramientas para ti en una sola membresía.",
+    "details": "Incluye Monchys Ahorro, Transcripción de audio, Resumidor de PDFs, Quitar fondo de imágenes, Convertidor Pro y Diario emocional. Por separado costarían $29 al mes.",
+    "specs": {
+      "Incluye": "6 herramientas",
+      "Ahorro": "Más del 55% vs. por separado",
+      "Cancelación": "Cuando quieras"
+    },
+    "published": true,
+    "createdAt": "2026-10-26T02:55:46.879Z",
+    "updatedAt": "2026-10-26T02:55:46.879Z",
+    "toolUrl": "",
+    "includes": [
+      "AHO-01",
+      "TRA-01",
+      "PDF-01",
+      "IMG-01",
+      "CNV-02",
+      "BIE-01"
+    ]
+  },
+  {
+    "id": "AHO-01",
+    "name": "Monchys Ahorro",
+    "price": 5,
+    "period": "month",
+    "category": "FINANZAS",
+    "icon": "wallet",
+    "desc": "Registra tus gastos por chat y te ayuda a ahorrar cada mes.",
+    "details": "Escríbele \"gasté 20 en comida\" y lo anota. Crea presupuestos por categoría, te avisa cuando te pasas y te propone metas de ahorro realistas. Es una herramienta de organización personal: no ofrece asesoría de inversión.",
+    "specs": {
+      "Registro": "Por chat, en lenguaje normal",
+      "Presupuestos": "Por categoría",
+      "Alertas": "Al acercarte o pasarte",
+      "Meta": "Ahorro mensual"
+    },
+    "published": true,
+    "createdAt": "2026-10-26T02:55:46.879Z",
+    "updatedAt": "2026-10-26T02:55:46.879Z",
+    "toolUrl": "/herramientas/ahorro",
+    "includes": []
+  },
+  {
+    "id": "TRA-01",
+    "name": "Transcripción de audio",
+    "price": 6,
+    "period": "month",
+    "category": "PRODUCTIVIDAD",
+    "icon": "mic",
+    "desc": "Convierte notas de voz, reuniones y clases en texto con resumen.",
+    "details": "Sube un audio o video y recibe la transcripción completa con marcas de tiempo, lista para copiar o descargar. Perfecto para reuniones, entrevistas, clases y notas de voz largas. La transcripción se hace en nuestro servidor; el resumen de puntos clave usa IA.",
+    "specs": {
+      "Minutos": "600 al mes",
+      "Por archivo": "Hasta 60 min / 200 MB",
+      "Formatos": "MP3, WAV, M4A, OGG, FLAC, MP4…",
+      "Exportar": "TXT, SRT, Word",
+      "Resumen": "Con IA"
+    },
+    "published": true,
+    "createdAt": "2026-10-26T02:55:46.879Z",
+    "updatedAt": "2026-10-26T02:55:46.879Z",
+    "toolUrl": "/herramientas/transcripcion",
+    "includes": []
+  },
+  {
+    "id": "PDF-01",
+    "name": "Resumidor de PDFs",
+    "price": 5,
+    "period": "month",
+    "category": "PRODUCTIVIDAD",
+    "icon": "file-text",
+    "desc": "Resume documentos largos y responde preguntas sobre ellos.",
+    "details": "Sube un PDF y obtén un resumen claro en segundos. Con IA, además puedes hacerle preguntas al documento: ideal para estudiar, revisar contratos o leer informes.",
+    "specs": {
+      "Documentos": "Hasta 100 guardados",
+      "Tamaño": "Hasta 300 páginas",
+      "Preguntas": "Chat con el documento (IA)"
+    },
+    "published": true,
+    "createdAt": "2026-10-26T02:55:46.879Z",
+    "updatedAt": "2026-10-26T02:55:46.879Z",
+    "toolUrl": "/herramientas/resumir-pdf",
+    "includes": []
+  },
+  {
+    "id": "CV-01",
+    "name": "Generador de CV con IA",
+    "price": 9,
+    "period": "once",
+    "category": "PRODUCTIVIDAD",
+    "icon": "briefcase",
+    "desc": "Crea un currículum profesional y tu carta de presentación en minutos.",
+    "details": "Rellena tus datos y ve tu CV en tiempo real. Elige diseño y color, descárgalo en PDF o Word y genera cartas de presentación adaptadas a cada oferta. Pago único: sin mensualidad.",
+    "specs": {
+      "Diseños": "3 diseños · 5 colores",
+      "Carta": "Incluida",
+      "Formato": "PDF / Word",
+      "Guardado": "Automático en tu cuenta"
+    },
+    "published": true,
+    "createdAt": "2026-10-26T02:55:46.879Z",
+    "updatedAt": "2026-10-26T02:55:46.879Z",
+    "toolUrl": "/herramientas/cv",
+    "includes": []
+  },
+  {
+    "id": "IMG-01",
+    "name": "Quitar fondo de imágenes",
+    "price": 5,
+    "period": "month",
+    "category": "ARCHIVOS Y MEDIOS",
+    "icon": "image",
+    "desc": "Fondos transparentes en un clic para tus fotos de producto.",
+    "details": "Elimina el fondo de fotos de productos, retratos y logos automáticamente. Procesa varias imágenes seguidas y descárgalas con fondo transparente, blanco o del color que quieras.",
+    "specs": {
+      "Imágenes": "500 al mes",
+      "Resolución": "Hasta 4K",
+      "Lotes": "Hasta 50 a la vez",
+      "Fondo": "Transparente, blanco o color"
+    },
+    "published": true,
+    "createdAt": "2026-10-26T02:55:46.879Z",
+    "updatedAt": "2026-10-26T02:55:46.879Z",
+    "toolUrl": "/herramientas/quitar-fondo",
+    "includes": []
+  },
+  {
+    "id": "CNV-01",
+    "name": "Convertidor de archivos",
+    "price": 0,
+    "period": "month",
+    "category": "ARCHIVOS Y MEDIOS",
+    "icon": "convert",
+    "desc": "Convierte imágenes, fotos del iPhone, audio y video a MP3 gratis, sin registrarte.",
+    "details": "Cambia el formato de tus archivos en segundos: JPG a PNG, HEIC a JPG, imagen a PDF, MP4 a MP3, WAV a MP3 y muchos más. Gratis para archivos de hasta 25 MB.",
+    "specs": {
+      "Formatos": "Imagen, PDF, audio y video a MP3",
+      "Tamaño": "Hasta 25 MB",
+      "Archivos": "1 a la vez"
+    },
+    "published": true,
+    "createdAt": "2026-10-26T02:55:46.879Z",
+    "updatedAt": "2026-10-26T02:55:46.879Z",
+    "toolUrl": "/herramientas/convertidor",
+    "includes": []
+  },
+  {
+    "id": "CNV-02",
+    "name": "Convertidor Pro",
+    "price": 4,
+    "period": "month",
+    "category": "ARCHIVOS Y MEDIOS",
+    "icon": "convert",
+    "desc": "Convierte y comprime videos y archivos grandes, por lotes.",
+    "details": "Todo lo del convertidor gratuito, con archivos de hasta 2 GB, conversión de video (MP4, WEBM, GIF animado), compresión para WhatsApp y hasta 50 archivos a la vez con descarga en ZIP.",
+    "specs": {
+      "Formatos": "Imagen, audio y video",
+      "Video": "Convertir, comprimir y GIF",
+      "Tamaño": "Hasta 2 GB",
+      "Archivos": "Hasta 50 a la vez"
+    },
+    "published": true,
+    "createdAt": "2026-10-26T02:55:46.879Z",
+    "updatedAt": "2026-10-26T02:55:46.879Z",
+    "toolUrl": "/herramientas/convertidor-pro",
+    "includes": []
+  },
+  {
+    "id": "BIE-01",
+    "name": "Diario emocional",
+    "price": 4,
+    "period": "month",
+    "category": "BIENESTAR",
+    "icon": "heart",
+    "desc": "Un espacio para escribir cómo te sientes y entender tus emociones.",
+    "details": "Preguntas guía cada día, registro de tu estado de ánimo y emociones, gráfico de los últimos 30 días y un ejercicio de respiración guiada.\n\nImportante: no es terapia ni sustituye la atención de un profesional de la salud mental. Si estás pasando por una crisis, contacta con los servicios de emergencia o una línea de ayuda de tu país.",
+    "specs": {
+      "Diario": "Con preguntas guía",
+      "Ánimo": "Gráfico de 30 días",
+      "Respiración": "Ejercicio guiado",
+      "Privacidad": "Solo en tu cuenta"
+    },
+    "published": true,
+    "createdAt": "2026-10-26T02:55:46.879Z",
+    "updatedAt": "2026-10-26T02:55:46.879Z",
+    "toolUrl": "/herramientas/diario",
+    "includes": []
+  },
+  {
+    "id": "CMP-01",
+    "name": "Comprimir imágenes y PDF",
+    "price": 0,
+    "period": "month",
+    "category": "ARCHIVOS Y MEDIOS",
+    "icon": "minimize",
+    "toolUrl": "/herramientas/comprimir",
+    "desc": "Reduce el peso de tus fotos y PDF gratis, sin registro.",
+    "details": "Comprime imágenes JPG, PNG, WEBP y HEIC y documentos PDF para enviarlos por correo o WhatsApp o subirlos a formularios. Elige compresión ligera, equilibrada o fuerte y descarga el resultado al instante.",
+    "specs": {
+      "Formatos": "JPG, PNG, WEBP, HEIC y PDF",
+      "Tamaño": "Hasta 50 MB por archivo",
+      "Precio": "Gratis, sin registro"
+    },
+    "published": true,
+    "includes": [],
+    "createdAt": "2026-10-28T22:24:58.104Z",
+    "updatedAt": "2026-10-28T22:24:58.104Z"
+  },
+  {
+    "id": "PDE-01",
+    "name": "Editar PDF",
+    "price": 4,
+    "period": "month",
+    "category": "PRODUCTIVIDAD",
+    "icon": "pen",
+    "toolUrl": "/herramientas/editar-pdf",
+    "desc": "Escribe, firma, une, ordena y gira las páginas de tus PDF.",
+    "details": "Edita tus PDF desde el navegador: añade texto, firma a mano o con imagen, tapa o resalta partes, une varios PDF, cambia el orden de las páginas, gíralas o elimínalas, numera las páginas y añade marca de agua. Tus archivos no salen de tu dispositivo.",
+    "specs": {
+      "Funciones": "Texto, firma, tapar, resaltar",
+      "Páginas": "Unir, ordenar, girar, extraer",
+      "Privacidad": "Se edita en tu dispositivo"
+    },
+    "published": true,
+    "includes": [],
+    "createdAt": "2026-10-28T22:24:58.104Z",
+    "updatedAt": "2026-10-28T22:24:58.104Z"
+  },
+  {
+    "id": "SUB-01",
+    "name": "Subtítulos para videos",
+    "price": 6,
+    "period": "month",
+    "category": "ARCHIVOS Y MEDIOS",
+    "icon": "subtitles",
+    "toolUrl": "/herramientas/subtitulos",
+    "desc": "Subtítulos automáticos para tus videos, listos para editar.",
+    "details": "Sube un video y obtén sus subtítulos automáticamente en español o inglés. Corrígelos en el editor, descárgalos en SRT o VTT, o crea el video con los subtítulos incrustados para Instagram, TikTok o YouTube.",
+    "specs": {
+      "Minutos": "300 al mes",
+      "Videos": "Hasta 30 min y 500 MB",
+      "Descarga": "SRT, VTT o video MP4"
+    },
+    "published": true,
+    "includes": [],
+    "createdAt": "2026-10-28T22:24:58.104Z",
+    "updatedAt": "2026-10-28T22:24:58.104Z"
+  },
+  {
+    "id": "RED-01",
+    "name": "Textos para redes sociales",
+    "price": 5,
+    "period": "month",
+    "category": "NEGOCIOS",
+    "icon": "megaphone",
+    "toolUrl": "/herramientas/redes",
+    "desc": "Publicaciones para Instagram, TikTok y más a partir de una idea.",
+    "details": "Cuéntale a Monchys qué quieres publicar y recibe textos listos para Instagram, Facebook, TikTok, LinkedIn, X y WhatsApp, con el tono que elijas y hashtags adaptados a cada red.",
+    "specs": {
+      "Redes": "6 redes sociales",
+      "Tonos": "5 estilos",
+      "Idiomas": "Español, inglés y portugués"
+    },
+    "published": true,
+    "includes": [],
+    "createdAt": "2026-10-28T22:24:58.104Z",
+    "updatedAt": "2026-10-28T22:24:58.104Z"
+  },
+  {
+    "id": "DES-01",
+    "name": "Descripciones de productos",
+    "price": 5,
+    "period": "month",
+    "category": "NEGOCIOS",
+    "icon": "tag",
+    "toolUrl": "/herramientas/descripciones",
+    "desc": "Títulos y descripciones que venden, incluso desde una foto.",
+    "details": "Escribe títulos, descripciones y viñetas para tu tienda online, Mercado Libre, Amazon, Marketplace o Etsy. Sube una foto del producto y Monchys la describe por ti, con palabras clave para que te encuentren.",
+    "specs": {
+      "Desde": "Foto o texto",
+      "Plataformas": "Mercado Libre, Amazon y más",
+      "Incluye": "Título, viñetas y palabras clave"
+    },
+    "published": true,
+    "includes": [],
+    "createdAt": "2026-10-28T22:24:58.104Z",
+    "updatedAt": "2026-10-28T22:24:58.104Z"
+  },
+  {
+    "id": "TRD-01",
+    "name": "Traductor de documentos",
+    "price": 5,
+    "period": "month",
+    "category": "PRODUCTIVIDAD",
+    "icon": "languages",
+    "toolUrl": "/herramientas/traductor",
+    "desc": "Traduce Word y PDF a 12 idiomas con IA.",
+    "details": "Sube un documento Word, PDF o de texto y descárgalo traducido. Los Word conservan su formato (tipos de letra, tablas y estilos); los PDF se entregan como Word editable.",
+    "specs": {
+      "Formatos": "Word, PDF y TXT",
+      "Idiomas": "12 idiomas",
+      "Tamaño": "Hasta 15 páginas por documento"
+    },
+    "published": true,
+    "includes": [],
+    "createdAt": "2026-10-28T22:24:58.104Z",
+    "updatedAt": "2026-10-28T22:24:58.104Z"
+  },
+  {
+    "id": "UPS-01",
+    "name": "Mejorar fotos con IA",
+    "price": 5,
+    "period": "month",
+    "category": "ARCHIVOS Y MEDIOS",
+    "icon": "sparkles",
+    "toolUrl": "/herramientas/mejorar-fotos",
+    "desc": "Amplía fotos pequeñas y mejora su color y nitidez.",
+    "details": "Duplica la resolución de fotos pequeñas o pixeladas con inteligencia artificial y mejora automáticamente su contraste, color y nitidez. Ideal para fotos antiguas, de WhatsApp o de productos.",
+    "specs": {
+      "Fotos": "200 al mes",
+      "Ampliación": "×2 con IA",
+      "Mejora": "Color, contraste y nitidez"
+    },
+    "published": true,
+    "includes": [],
+    "createdAt": "2026-10-28T22:24:58.104Z",
+    "updatedAt": "2026-10-28T22:24:58.104Z"
+  },
+  {
+    "id": "GEN-01",
+    "name": "Generar imágenes con IA",
+    "price": 5,
+    "period": "month",
+    "category": "ARCHIVOS Y MEDIOS",
+    "icon": "wand",
+    "toolUrl": "/herramientas/generar-imagenes",
+    "desc": "Describe lo que imaginas y la IA crea la imagen en segundos.",
+    "details": "Escribe en español lo que quieres ver y la inteligencia artificial crea la imagen: ilustraciones, fotos de producto, fondos, ideas para redes sociales y más. Elige formato cuadrado, horizontal o vertical. Prueba gratis con 3 imágenes al día.",
+    "specs": {
+      "Imágenes": "200 al mes",
+      "Gratis": "3 al día sin suscripción",
+      "Formatos": "Cuadrada, horizontal y vertical"
+    },
+    "published": true,
+    "includes": [],
+    "createdAt": "2026-10-30T12:00:00.000Z",
+    "updatedAt": "2026-10-30T12:00:00.000Z"
+  },
+  {
+    "id": "VID-01",
+    "name": "Generar videos con IA",
+    "price": 9,
+    "period": "month",
+    "category": "ARCHIVOS Y MEDIOS",
+    "icon": "clapper",
+    "toolUrl": "/herramientas/generar-videos",
+    "desc": "Describe una escena y la IA crea un video corto en HD.",
+    "details": "Escribe en español lo que quieres ver y la inteligencia artificial crea un video de unos 5 segundos en 720p: escenas para redes sociales, anuncios, fondos animados e ideas creativas. Formato horizontal o vertical para TikTok, Reels y Shorts.",
+    "specs": {
+      "Videos": "30 al mes",
+      "Duración": "Unos 5 segundos",
+      "Calidad": "HD 720p, horizontal o vertical"
+    },
+    "published": true,
+    "includes": [],
+    "createdAt": "2026-10-30T12:00:00.000Z",
+    "updatedAt": "2026-10-30T12:00:00.000Z"
+  }
+]

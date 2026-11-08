@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<!-- Explainer video scene. video/render.mjs opens explainer.html?tool=<id>, calls renderAt(t) for each frame and encodes the frames with ffmpeg. -->
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 720px; overflow: hidden; background: #fff6ec; }
+  body { font-family: Nunito, Arial, sans-serif; color: #16181c; }
+  #frame { position: relative; width: 1280px; height: 720px; overflow: hidden; background: radial-gradient(circle at 85% 15%, #dceefb 0, rgba(220, 238, 251, 0) 45%), #fff6ec; }
+  .abs { position: absolute; }
+  .display { font-family: Fredoka, Nunito, sans-serif; }
+  .hex { clip-path: polygon(25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%, 0% 50%); display: flex; align-items: center; justify-content: center; }
+  .card { background: #fff; border-radius: 28px; box-shadow: 0 6px 0 rgba(22, 24, 28, 0.08), 0 24px 48px -16px rgba(22, 24, 28, 0.35); }
+  .chip { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; font-family: Fredoka; font-weight: 600; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 999px; font-family: Fredoka; font-weight: 600; color: #fff; background: #e5231b; box-shadow: 0 5px 0 #b3170f; }
+  /* Mascot (same geometry as src/Mascot.jsx) */
+  #mascot { position: absolute; width: 230px; transform-origin: 50% 100%; z-index: 5; }
+  #mascot .fig { position: relative; aspect-ratio: 411 / 568; }
+  #mascot img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #mascot .lid { position: absolute; border-radius: 50%; background: linear-gradient(#abd2ee, #92b9d7); transform-origin: 50% 0; }
+  #mascot .mouth { position: absolute; overflow: hidden; border-radius: 30% / 40%; left: 27.8%; top: 35%; width: 46.2%; height: 22%; }
+  #mascot .lip { position: absolute; left: 0; right: 0; }
+  #mascot .lip.top { top: 0; height: 75%; transform-origin: 50% 0; background: linear-gradient(#93bbdb, #a3cbea); }
+  #mascot .lip.bottom { bottom: 0; height: 51%; transform-origin: 50% 100%; background: linear-gradient(#a0c8e8, #a7ceee); border-radius: 50% 50% 0 0 / 12% 12% 0 0; box-shadow: inset 0 2px 1px rgba(50, 80, 105, 0.55); }
+  #stage { position: absolute; left: 450px; top: 105px; width: 780px; height: 530px; z-index: 2; }
+  #stage-static, #stage-dyn { position: absolute; inset: 0; }
+  .checker { background: repeating-conic-gradient(#e8e2da 0% 25%, #ffffff 0% 50%) 50% / 22px 22px; }
+</style>
+</head>
+<body>
+<div id="frame">
+  <div id="overlay" class="abs" style="inset:0;z-index:3"></div>
+  <div id="stage" class="card">
+    <div id="stage-static">
+      <!-- Images kept as persistent nodes so no frame is captured before they paint -->
+      <div id="ba" class="abs" style="left:215px;top:90px;width:350px;height:350px;border-radius:22px;overflow:hidden;display:none">
+        <img id="ba-before" src="../public/mascot-original.png" class="abs" style="inset:0;width:100%;height:100%;object-fit:cover" />
+        <div id="ba-after" class="abs checker" style="inset:0;overflow:hidden">
+          <img src="../public/mascot-logo.png" class="abs" style="left:50%;top:6%;height:88%;transform:translateX(-50%)" />
+        </div>
+        <div id="ba-line" class="abs" style="top:0;bottom:0;width:6px;background:#e5231b;border-radius:3px"></div>
+      </div>
+      <div id="en" class="abs" style="left:215px;top:90px;width:350px;height:350px;border-radius:22px;overflow:hidden;display:none;background:#dceefb">
+        <img src="../public/mascot-original.png" class="abs" style="inset:0;width:100%;height:100%;object-fit:cover;filter:blur(3.5px) contrast(.8) saturate(.6) brightness(1.08)" />
+        <div id="en-after" class="abs" style="inset:0;overflow:hidden">
+          <img src="../public/mascot-original.png" class="abs" style="inset:0;width:100%;height:100%;object-fit:cover;filter:contrast(1.08) saturate(1.15)" />
+        </div>
+        <div id="en-line" class="abs" style="top:0;bottom:0;width:6px;background:#e5231b;border-radius:3px"></div>
+      </div>
+    </div>
+    <div id="stage-dyn"></div>
+  </div>
+  <div id="mascot">
+    <div class="fig">
+      <img src="../public/mascot-logo.png" />
+      <span class="lid" style="left:25.5%;top:23.2%;width:10%;height:8.1%"></span>
+      <span class="lid" style="left:65.9%;top:23.2%;width:10.5%;height:8.1%"></span>
+      <span class="mouth"><span class="lip top"></span><span class="lip bottom"></span></span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- Timing ----------
+const INTRO = 2.6, STEP = 3.6, OUTRO = 2.8;
+const DURATION = INTRO + 3 * STEP + OUTRO;
+window.DURATION = DURATION;
+window.POSTER_TIME = INTRO + STEP * 0.62; // a frame from step 1 for the thumbnail
+
+// ---------- Helpers ----------
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, p) => a + (b - a) * p;
+const eo = (x) => 1 - Math.pow(1 - x, 3);
+const eio = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const back = (x) => { const c1 = 1.70158, c3 = c1 + 1; return x <= 0 ? 0 : 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const typed = (text, p) => text.slice(0, Math.round(text.length * clamp(p)));
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const BLUE = '#9fcdf2', DEEP = '#3e6e96', RED = '#e5231b', INK = '#16181c', CREAM = '#fff6ec', DATA = '#3a86d1';
+
+const ICONS = {
+  file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  down: '<path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/>',
+  upload: '<path d="M12 16V5"/><path d="M7 9l5-5 5 5"/><path d="M5 20h14"/>',
+  zip: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 3v2m0 2v2m0 2v2"/>',
+};
+const icon = (name, size = 26, color = INK, sw = 2.4) =>
+  `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
+const cursor = (x, y, press = 0) =>
+  `<svg class="abs" style="left:${x}px;top:${y}px;transform:scale(${1 - press * 0.15});transform-origin:0 0;z-index:9" width="34" height="40" viewBox="0 0 24 28"><path d="M3 2l17 11-7.5 1.6L9 22z" fill="${INK}" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+const hexIcon = (inner, size, bg = BLUE, style = '') => `<div class="hex abs" style="width:${size}px;height:${size}px;background:${bg};${style}">${inner}</div>`;
+const fade = (p) => clamp(Math.min(seg(p, 0, 0.07), 1 - seg(p, 0.93, 1)));
+
+// ---------- Stage primitives: (p = 0..1 progress inside the step, d = data) ----------
+const P = {
+  upload(p, d) {
+    const fly = eo(seg(p, 0.08, 0.38));
+    const bar = eio(seg(p, 0.45, 0.78));
+    const done = seg(p, 0.8, 0.88);
+    const x = lerp(560, 215, fly), y = lerp(-140, 205, fly), rot = lerp(14, 0, fly);
+    return `
+      <div class="abs" style="left:90px;top:120px;width:600px;height:300px;border:4px dashed ${BLUE};border-radius:28px;background:rgba(220,238,251,.45)"></div>
+      <div class="abs display" style="left:0;right:0;top:${360 - fly * 0}px;text-align:center;font-size:24px;font-weight:600;opacity:${1 - fly}">Arrastra tu archivo aquí</div>
+      <div class="abs card" style="left:${x}px;top:${y}px;width:350px;height:96px;transform:rotate(${rot}deg);display:flex;align-items:center;gap:16px;padding:0 20px;background:${CREAM}">
+        <div class="hex" style="width:56px;height:56px;background:${BLUE};flex:none">${icon('file', 26)}</div>
+        <div><div class="display" style="font-size:24px;font-weight:600">${esc(d.file)}</div><div style="font-size:17px;color:#16181c99">${esc(d.size)}</div></div>
+      </div>
+      <div class="abs" style="left:215px;top:330px;width:350px;height:14px;border-radius:7px;background:${CREAM};opacity:${seg(p, 0.42, 0.46)}"><div style="height:100%;width:${bar * 100}%;border-radius:7px;background:${DATA}"></div></div>
+      <div class="abs display" style="left:0;right:0;top:362px;text-align:center;font-size:24px;font-weight:600;color:${DEEP};opacity:${seg(p, 0.45, 0.5)}">${done > 0 ? '¡Subido!' : `Subiendo… ${Math.round(bar * 100)}%`}</div>`;
+  },
+
+  choose(p, d) {
+    const n = d.options.length, cw = d.chipW ?? 150, gap = 18;
+    const total = n * cw + (n - 1) * gap, x0 = (780 - total) / 2;
+    const pickX = x0 + d.pick * (cw + gap) + cw / 2, pickY = 188;
+    const toChip = eio(seg(p, 0.1, 0.38)), picked = p > 0.4;
+    const toBtn = eio(seg(p, 0.55, 0.74)), press = seg(p, 0.76, 0.8) - seg(p, 0.84, 0.88);
+    const cx = toBtn > 0 ? lerp(pickX, 390, toBtn) : lerp(640, pickX, toChip);
+    const cy = toBtn > 0 ? lerp(pickY, 382, toBtn) : lerp(470, pickY, toChip);
+    const chips = d.options.map((o, i) => {
+      const on = picked && i === d.pick;
+      const pop = on ? 1 + 0.08 * Math.sin(Math.PI * seg(p, 0.4, 0.5)) : 1;
+      return `<div class="chip abs" style="left:${x0 + i * (cw + gap)}px;top:160px;width:${cw}px;height:58px;font-size:23px;transform:scale(${pop});background:${on ? INK : CREAM};color:${on ? BLUE : INK}">${esc(o)}</div>`;
+    }).join('');
+    const colors = d.colors ? d.colors.map((c, i) => `<div class="abs" style="left:${300 + i * 40}px;top:250px;width:30px;height:30px;border-radius:50%;background:${c};${i === 0 && picked ? `box-shadow:0 0 0 3px #fff,0 0 0 6px ${INK}` : ''}"></div>`).join('') : '';
+    return `
+      <div class="abs display" style="left:0;right:0;top:80px;text-align:center;font-size:28px;font-weight:700">${esc(d.label)}</div>
+      ${chips}${colors}
+      <div class="btn abs" style="left:220px;top:350px;width:340px;height:72px;font-size:28px;transform:translateY(${press * 4}px);box-shadow:0 ${5 - press * 5}px 0 #b3170f">${esc(d.button)}</div>
+      ${cursor(cx, cy, press)}`;
+  },
+
+  result(p, d) {
+    const pop = back(seg(p, 0.06, 0.3));
+    const txt = seg(p, 0.25, 0.4);
+    const pulse = 1 + 0.05 * Math.sin(Math.max(0, p - 0.45) * 18);
+    const sparks = [0, 1, 2, 3, 4, 5].map((i) => {
+      const a = (i / 6) * Math.PI * 2 + 0.4, r = 70 + 110 * eo(seg(p, 0.1, 0.45));
+      return `<div class="hex abs" style="left:${390 + Math.cos(a) * r - 9}px;top:${150 + Math.sin(a) * r - 9}px;width:18px;height:18px;background:${i % 2 ? RED : BLUE};opacity:${1 - seg(p, 0.35, 0.55)}"></div>`;
+    }).join('');
+    return `${sparks}
+      ${hexIcon(icon('check', 54, INK, 3), 110, BLUE, `left:335px;top:95px;transform:scale(${pop})`)}
+      <div class="abs display" style="left:0;right:0;top:230px;text-align:center;font-size:40px;font-weight:700;opacity:${txt}">${esc(d.title ?? '¡Listo!')}</div>
+      <div class="abs" style="left:0;right:0;top:288px;text-align:center;font-size:22px;color:#16181c99;opacity:${txt}">${esc(d.file ?? '')}</div>
+      <div class="btn abs" style="left:230px;top:350px;width:320px;height:72px;font-size:28px;opacity:${seg(p, 0.35, 0.45)};transform:scale(${p > 0.45 ? pulse : 1})">${icon(d.zip ? 'zip' : 'down', 28, '#fff')} ${esc(d.button ?? 'Descargar')}</div>`;
+  },
+
+  beforeAfter(p) {
+    // Uses the persistent #ba element; this layer only adds labels
+    const w = eio(seg(p, 0.15, 0.7));
+    const ba = document.getElementById('ba');
+    ba.style.display = 'block';
+    document.getElementById('ba-after').style.clipPath = `inset(0 ${100 - w * 100}% 0 0)`;
+    document.getElementById('ba-line').style.left = `${w * 350 - 3}px`;
+    document.getElementById('ba-line').style.opacity = w > 0 && w < 1 ? 1 : 0;
+    return `
+      <div class="abs display" style="left:0;right:0;top:34px;text-align:center;font-size:28px;font-weight:700">La IA quita el fondo</div>
+      <div class="chip abs" style="left:215px;top:458px;width:150px;height:44px;font-size:20px;background:${INK};color:${BLUE};opacity:${seg(p, 0.2, 0.3)}">Sin fondo</div>
+      <div class="chip abs" style="left:415px;top:458px;width:150px;height:44px;font-size:20px;background:${CREAM};opacity:${1 - seg(p, 0.6, 0.7)}">Original</div>`;
+  },
+
+  transcript(p, d) {
+    const bars = Array.from({ length: 46 }, (_, i) => {
+      const h = 16 + 70 * Math.abs(Math.sin(i * 0.9 + p * 22) * Math.sin(i * 0.37 + 1.3));
+      const played = i / 46 < seg(p, 0.05, 0.55);
+      return `<div class="abs" style="left:${70 + i * 14}px;top:${150 - h / 2}px;width:8px;height:${h}px;border-radius:4px;background:${played ? DATA : '#dceefb'}"></div>`;
+    }).join('');
+    const lines = d.lines.map((l, i) => {
+      const lp = seg(p, 0.3 + i * 0.17, 0.48 + i * 0.17);
+      return `<div class="abs" style="left:70px;top:${240 + i * 56}px;font-size:22px;display:flex;gap:14px"><span style="color:#16181c66;font-family:monospace;font-size:18px;padding-top:3px">0:${String(4 + i * 7).padStart(2, '0')}</span><span>${esc(typed(l, lp))}</span></div>`;
+    }).join('');
+    return `${bars}${lines}`;
+  },
+
+  summary(p, d) {
+    const pages = [0, 1, 2].map((i) => `<div class="abs card" style="left:${70 + i * 14}px;top:${130 + i * 14}px;width:170px;height:230px;border-radius:14px;background:#fff;border:2px solid #e8e2da;transform:rotate(${(i - 1) * 4}deg)">
+        ${i === 2 ? `<div style="margin:22px 18px 0;font-family:Fredoka;font-weight:700;color:${RED};font-size:22px">PDF</div>${[0, 1, 2, 3, 4, 5].map((k) => `<div style="margin:12px 18px 0;height:8px;border-radius:4px;background:#e8e2da;width:${70 + ((k * 37) % 50)}%"></div>`).join('')}` : ''}</div>`).join('');
+    const arrow = `<div class="abs display" style="left:290px;top:210px;font-size:54px;color:${DEEP};opacity:${seg(p, 0.12, 0.2)};transform:translateX(${eo(seg(p, 0.12, 0.3)) * 14}px)">→</div>`;
+    const bullets = d.points.map((b, i) => {
+      const bp = eo(seg(p, 0.22 + i * 0.16, 0.36 + i * 0.16));
+      return `<div class="abs" style="left:380px;top:${150 + i * 72}px;width:360px;font-size:21px;display:flex;gap:10px;opacity:${bp};transform:translateX(${(1 - bp) * 30}px)"><span style="color:${DEEP};font-weight:800">•</span><span>${esc(b)}</span></div>`;
+    }).join('');
+    return `${pages}${arrow}<div class="abs display" style="left:380px;top:96px;font-size:20px;font-weight:700;color:${DEEP};letter-spacing:.06em;opacity:${seg(p, 0.18, 0.26)}">RESUMEN</div>${bullets}`;
+  },
+
+  chat(p, d) {
+    const q = typed(d.q, seg(p, 0.05, 0.32));
+    const typing = p > 0.36 && p < 0.52;
+    const a = typed(d.a, seg(p, 0.54, 0.86));
+    const dots = [0, 1, 2].map((i) => `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#16181c55;margin:0 4px;transform:translateY(${-6 * Math.max(0, Math.sin(p * 40 - i))}px)"></span>`).join('');
+    return `
+      <div class="abs display" style="left:60px;top:44px;font-size:26px;font-weight:700">${esc(d.title)}</div>
+      <div class="abs" style="right:60px;top:120px;max-width:470px;background:${INK};color:#fff;border-radius:24px 24px 6px 24px;padding:18px 24px;font-size:23px;opacity:${q ? 1 : 0}">${esc(q) || '&nbsp;'}</div>
+      ${typing ? `<div class="abs" style="left:60px;top:250px;background:${CREAM};border-radius:24px;padding:20px 22px">${dots}</div>` : ''}
+      ${p >= 0.52 ? `<div class="abs" style="left:60px;top:250px;max-width:560px;background:${CREAM};border-radius:24px 24px 24px 6px;padding:18px 24px;font-size:23px;line-height:1.35">${esc(a)}</div>` : ''}`;
+  },
+
+  form(p, d) {
+    const fields = d.fields.map(([label, value], i) => {
+      const fp = seg(p, 0.06 + i * 0.16, 0.2 + i * 0.16);
+      return `<div class="abs" style="left:50px;top:${70 + i * 102}px;width:330px">
+        <div style="font-size:15px;font-weight:800;letter-spacing:.08em;color:#16181c80;text-transform:uppercase">${esc(label)}</div>
+        <div style="margin-top:6px;height:54px;border:3px solid ${fp > 0 && fp < 1 ? BLUE : '#16181c1a'};border-radius:14px;padding:0 14px;display:flex;align-items:center;font-size:22px;font-weight:700">${esc(typed(value, fp))}${fp > 0 && fp < 1 ? '<span style="width:2px;height:26px;background:#16181c;margin-left:2px"></span>' : ''}</div></div>`;
+    }).join('');
+    const doc = eo(seg(p, 0.15, 0.45));
+    const name = typed(d.fields[0][1], seg(p, 0.06, 0.2));
+    return `${fields}
+      <div class="abs" style="left:430px;top:60px;width:300px;height:410px;border-radius:12px;background:#fff;border:2px solid #e8e2da;overflow:hidden;opacity:${doc};transform:translateY(${(1 - doc) * 30}px)">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:96px;background:${DATA}"></div>
+        <div style="position:absolute;left:12px;top:24px;width:76px;color:#fff;font-family:Fredoka;font-weight:700;font-size:15px;line-height:1.1">${esc(name)}</div>
+        ${[0, 1, 2, 3].map((k) => `<div style="position:absolute;left:12px;top:${110 + k * 18}px;width:${50 + (k % 2) * 16}px;height:7px;border-radius:4px;background:#ffffff99"></div>`).join('')}
+        ${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((k) => `<div style="position:absolute;left:112px;top:${30 + k * 34}px;width:${k % 3 === 0 ? 80 : 160 - (k * 13) % 40}px;height:${k % 3 === 0 ? 10 : 7}px;border-radius:4px;background:${k % 3 === 0 ? DATA : '#e8e2da'};opacity:${seg(p, 0.3 + k * 0.05, 0.36 + k * 0.05)}"></div>`).join('')}
+      </div>`;
+  },
+
+  bars(p, d) {
+    const max = Math.max(...d.rows.map((r) => Math.max(r.spent, r.budget || 0)));
+    const rows = d.rows.map((r, i) => {
+      const g = eo(seg(p, 0.1 + i * 0.12, 0.45 + i * 0.12));
+      const spent = r.spent * g;
+      const within = Math.min(spent, r.budget || spent), over = r.budget && spent > r.budget ? spent - r.budget : 0;
+      const W = 600;
+      return `<div class="abs" style="left:90px;top:${110 + i * 112}px;width:${W}px">
+        <div style="display:flex;justify-content:space-between;font-size:22px;font-weight:800"><span>${esc(r.name)}</span><span style="color:#16181cb0">$${Math.round(spent).toLocaleString('es')}${r.budget ? ` <span style="color:#16181c70">/ $${r.budget}</span>` : ''}${over > 0 && g > 0.95 ? ` <span style="color:${RED}">⚠ Excedido</span>` : ''}</span></div>
+        <div style="position:relative;margin-top:10px;height:22px;border-radius:11px;background:${CREAM}">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:${(within / max) * 100}%;background:${DATA};border-radius:${over ? '11px 0 0 11px' : '11px'}"></div>
+          ${over ? `<div style="position:absolute;top:0;bottom:0;left:calc(${(within / max) * 100}% + 2px);width:calc(${(over / max) * 100}% - 2px);background:${RED};border-radius:0 11px 11px 0"></div>` : ''}
+          ${r.budget ? `<div style="position:absolute;top:-6px;bottom:-6px;left:${(r.budget / max) * 100}%;width:4px;border-radius:2px;background:${INK}"></div>` : ''}
+        </div></div>`;
+    }).join('');
+    return `<div class="abs display" style="left:90px;top:44px;font-size:26px;font-weight:700">${esc(d.title)}</div>${rows}`;
+  },
+
+  mood(p) {
+    const faces = ['😢', '😕', '😐', '🙂', '😄'];
+    const pick = p > 0.38;
+    const toFace = eio(seg(p, 0.08, 0.36));
+    const fx = 90 + 3 * 128 + 52, cx = lerp(660, fx, toFace), cy = lerp(470, 200, toFace);
+    const boxes = faces.map((f, i) => {
+      const on = pick && i === 3;
+      return `<div class="abs" style="left:${90 + i * 128}px;top:140px;width:110px;height:120px;border-radius:24px;border:4px solid ${on ? INK : CREAM};background:${on ? '#dceefb' : CREAM};display:flex;align-items:center;justify-content:center;font-size:58px;transform:scale(${on ? 1 + 0.08 * Math.sin(Math.PI * seg(p, 0.38, 0.5)) : 1})">${f}</div>`;
+    }).join('');
+    const chips = ['calma', 'gratitud', 'ilusión'].map((c, i) => {
+      const on = p > 0.55 + i * 0.1;
+      return `<div class="chip abs" style="left:${170 + i * 155}px;top:320px;width:140px;height:52px;font-size:22px;background:${on ? INK : CREAM};color:${on ? BLUE : INK}">${c}</div>`;
+    }).join('');
+    return `<div class="abs display" style="left:0;right:0;top:56px;text-align:center;font-size:30px;font-weight:700">¿Cómo te sientes hoy?</div>${boxes}${chips}${cursor(cx, cy, pick && p < 0.45 ? 1 : 0)}`;
+  },
+
+  journal(p, d) {
+    return `
+      <div class="abs display" style="left:60px;top:56px;font-size:28px;font-weight:700">${esc(d.prompt)}</div>
+      <div class="abs" style="left:60px;top:120px;width:660px;height:250px;border:3px solid ${BLUE};border-radius:20px;padding:22px;font-size:24px;line-height:1.5">${esc(typed(d.text, seg(p, 0.08, 0.7)))}<span style="display:inline-block;width:2px;height:26px;background:${INK};vertical-align:middle;opacity:${Math.sin(p * 40) > 0 ? 1 : 0}"></span></div>
+      <div class="btn abs" style="left:220px;top:400px;width:340px;height:70px;font-size:27px;opacity:${seg(p, 0.7, 0.78)}">${p > 0.85 ? '¡Guardado!' : 'Guardar entrada'}</div>`;
+  },
+
+  moodChart(p, d) {
+    const bars = d.values.map((v, i) => {
+      const g = eo(seg(p, 0.08 + i * 0.035, 0.3 + i * 0.035));
+      return `<div class="abs" style="left:${80 + i * 44}px;top:${400 - (v / 5) * 240 * g}px;width:34px;height:${(v / 5) * 240 * g}px;border-radius:5px 5px 0 0;background:${DATA}"></div>`;
+    }).join('');
+    return `<div class="abs display" style="left:80px;top:56px;font-size:28px;font-weight:700">Tu ánimo en las últimas 2 semanas</div>
+      <div class="abs" style="left:76px;top:401px;width:620px;height:3px;background:#16181c22"></div>${bars}
+      <div class="abs display" style="right:60px;top:60px;font-size:24px;font-weight:700;opacity:${seg(p, 0.7, 0.8)}">Promedio 4,1 🙂</div>`;
+  },
+
+  calendar(p) {
+    const days = [['LUN', 26], ['MAR', 27], ['MIÉ', 28], ['JUE', 29], ['VIE', 30], ['SÁB', 31]];
+    const dayPick = p > 0.25, slotPick = p > 0.6;
+    const slots = ['16:00', '16:30', '17:00', '17:30', '18:00'];
+    const c1 = eio(seg(p, 0.05, 0.23)), c2 = eio(seg(p, 0.4, 0.58));
+    const cx = c2 > 0 ? lerp(195, 390, c2) : lerp(640, 195, c1), cy = c2 > 0 ? lerp(140, 300, c2) : lerp(470, 140, c1);
+    return `
+      <div class="abs display" style="left:70px;top:44px;font-size:26px;font-weight:700">Elige día y hora</div>
+      ${days.map(([w, n], i) => { const on = dayPick && i === 1; return `<div class="abs" style="left:${70 + i * 108}px;top:95px;width:92px;height:100px;border-radius:20px;border:3px solid ${on ? INK : CREAM};background:${on ? INK : CREAM};color:${on ? BLUE : INK};text-align:center;padding-top:12px"><div style="font-size:15px;font-weight:800">${w}</div><div class="display" style="font-size:34px;font-weight:700">${n}</div></div>`; }).join('')}
+      ${slots.map((s, i) => { const on = slotPick && i === 2; return `<div class="chip abs" style="left:${70 + i * 128}px;top:250px;width:112px;height:52px;font-size:21px;opacity:${seg(p, 0.28, 0.36)};background:${on ? RED : CREAM};color:${on ? '#fff' : INK}">${s}</div>`; }).join('')}
+      <div class="btn abs" style="left:200px;top:370px;width:380px;height:70px;font-size:26px;opacity:${seg(p, 0.68, 0.76)}">Reservar · Mar 27, 17:00</div>
+      ${cursor(cx, cy, (dayPick && p < 0.3) || (slotPick && p < 0.66) ? 1 : 0)}`;
+  },
+
+  batch(p, d) {
+    const rows = d.files.map((f, i) => {
+      const g = eio(seg(p, 0.12 + i * 0.16, 0.42 + i * 0.16));
+      return `<div class="abs" style="left:80px;top:${80 + i * 100}px;width:620px;height:80px;border-radius:20px;background:${CREAM};display:flex;align-items:center;gap:18px;padding:0 20px;opacity:${eo(seg(p, i * 0.05, 0.1 + i * 0.05))}">
+        <div class="hex" style="width:48px;height:48px;background:${BLUE};flex:none">${icon('file', 22)}</div>
+        <div style="flex:1"><div class="display" style="font-size:22px;font-weight:600">${esc(f[0])} <span style="color:#16181c80;font-size:18px">→ ${esc(f[1])}</span></div>
+          <div style="margin-top:8px;height:9px;border-radius:5px;background:#fff"><div style="height:100%;width:${g * 100}%;border-radius:5px;background:${DATA}"></div></div></div>
+        <div style="width:30px">${g >= 1 ? icon('check', 30, DEEP, 3) : ''}</div></div>`;
+    }).join('');
+    return `${rows}<div class="btn abs" style="left:230px;top:405px;width:320px;height:66px;font-size:25px;opacity:${seg(p, 0.75, 0.82)}">${icon('zip', 26, '#fff')} Descargar ZIP</div>`;
+  },
+
+  compress(p, d) {
+    const g = eio(seg(p, 0.15, 0.7));
+    const size = lerp(d.from, d.to, g);
+    return `
+      <div class="abs display" style="left:0;right:0;top:56px;text-align:center;font-size:28px;font-weight:700">${esc(d.title)}</div>
+      <div class="abs display" style="left:0;right:0;top:130px;text-align:center;font-size:96px;font-weight:700;color:${g >= 1 ? DEEP : INK}">${size.toFixed(1).replace('.', ',')} MB</div>
+      <div class="abs" style="left:140px;top:280px;width:500px;height:26px;border-radius:13px;background:${CREAM}"><div style="height:100%;width:${(size / d.from) * 100}%;border-radius:13px;background:${g >= 1 ? DATA : RED}"></div></div>
+      <div class="chip abs" style="left:240px;top:350px;width:300px;height:56px;font-size:23px;background:${INK};color:${BLUE};opacity:${seg(p, 0.72, 0.8)}">${esc(d.badge)}</div>`;
+  },
+
+  // A PDF page: text is typed where the cursor clicks, then a signature is drawn
+  pdfSign(p) {
+    const lines = [0, 1, 2, 3, 4, 5, 6].map((k) => `<div class="abs" style="left:${60}px;top:${70 + k * 30}px;width:${200 - (k * 23) % 70}px;height:9px;border-radius:5px;background:#e8e2da"></div>`).join('');
+    const c1 = eio(seg(p, 0.04, 0.2)), c2 = eio(seg(p, 0.46, 0.58));
+    const sig = seg(p, 0.6, 0.88);
+    // Signature path drawn progressively (stroke-dashoffset)
+    const path = 'M10 60 C 30 10, 50 10, 45 55 S 70 80, 85 35 S 110 10, 115 50 S 140 70, 160 30 C 170 15, 185 40, 200 45';
+    const cx = c2 > 0 ? lerp(140, 70 + sig * 200, c2) : lerp(560, 140, c1);
+    const cy = c2 > 0 ? lerp(70, 330 + Math.sin(sig * 12) * 18, c2) : lerp(470, 70, c1);
+    return `
+      <div class="abs" style="left:230px;top:20px;width:320px;height:440px;border-radius:10px;background:#fff;border:2px solid #e8e2da;box-shadow:0 10px 30px -12px rgba(22,24,28,.3)">
+        <div class="abs display" style="left:30px;top:22px;font-size:18px;font-weight:700;color:${RED}">CONTRATO</div>
+        ${lines}
+        <div class="abs" style="left:28px;top:300px;font-size:13px;color:#16181c80">Firma:</div>
+        <div class="abs" style="left:28px;top:400px;width:200px;height:2px;background:#16181c40"></div>
+        <div class="abs" style="left:126px;top:56px;font-family:Helvetica,Arial;font-size:17px;color:${'#1d4ed8'};opacity:${seg(p, 0.2, 0.22)}">${esc(typed('Laura Gómez · 28/10', seg(p, 0.22, 0.42)))}</div>
+        <svg class="abs" style="left:30px;top:315px" width="220" height="90" viewBox="0 0 210 90"><path d="${path}" fill="none" stroke="#1d4ed8" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="520" stroke-dashoffset="${520 * (1 - sig)}"/></svg>
+      </div>
+      <div class="chip abs" style="left:40px;top:40px;width:150px;height:46px;font-size:20px;background:${p < 0.45 ? INK : CREAM};color:${p < 0.45 ? BLUE : INK}">Texto</div>
+      <div class="chip abs" style="left:40px;top:100px;width:150px;height:46px;font-size:20px;background:${p >= 0.45 ? INK : CREAM};color:${p >= 0.45 ? BLUE : INK}">Firma</div>
+      <div class="chip abs" style="left:40px;top:160px;width:150px;height:46px;font-size:20px;background:${CREAM}">Tapar</div>
+      <div class="chip abs" style="left:40px;top:220px;width:150px;height:46px;font-size:20px;background:${CREAM}">Resaltar</div>
+      ${cursor(cx + 230, cy + 20, (p > 0.18 && p < 0.22) || (sig > 0 && sig < 1) ? 1 : 0)}`;
+  },
+
+  // Page thumbnails: two swap places and one rotates
+  pages(p) {
+    const swap = eio(seg(p, 0.15, 0.45)), rot = eio(seg(p, 0.55, 0.8)) * 90;
+    const pos = [0, 1, 2].map((i) => 90 + i * 230);
+    const x = [pos[0], lerp(pos[1], pos[2], swap), lerp(pos[2], pos[1], swap)];
+    return `<div class="abs display" style="left:0;right:0;top:40px;text-align:center;font-size:28px;font-weight:700">Une, ordena y gira páginas</div>
+      ${[0, 1, 2].map((i) => `<div class="abs" style="left:${x[i]}px;top:${i === 2 ? 150 - Math.sin(Math.PI * swap) * 30 : 150}px;width:160px;height:210px;border-radius:12px;background:#fff;border:3px solid ${i === 2 && swap > 0 && swap < 1 ? BLUE : '#e8e2da'};transform:rotate(${i === 0 ? rot : 0}deg);z-index:${i === 2 ? 2 : 1}">
+        <div class="display" style="margin:18px;font-size:22px;font-weight:700;color:${DEEP}">${i + 1}</div>
+        ${[0, 1, 2, 3, 4].map((k) => `<div style="margin:10px 18px 0;height:8px;border-radius:4px;background:#e8e2da;width:${45 + ((k + i) * 17) % 30}%"></div>`).join('')}</div>`).join('')}
+      <div class="btn abs" style="left:230px;top:420px;width:320px;height:66px;font-size:25px;opacity:${seg(p, 0.8, 0.88)}">${icon('down', 26, '#fff')} Descargar PDF</div>`;
+  },
+
+  // A video frame with subtitles appearing over it, cue by cue
+  subtitles(p, d) {
+    const i = Math.min(d.cues.length - 1, Math.floor(seg(p, 0.05, 0.95) * d.cues.length));
+    const bars = Array.from({ length: 40 }, (_, k) => {
+      const h = 10 + 40 * Math.abs(Math.sin(k * 0.8 + p * 20) * Math.sin(k * 0.31 + 1.1));
+      return `<div class="abs" style="left:${80 + k * 15.5}px;top:${460 - h / 2}px;width:9px;height:${h}px;border-radius:4px;background:${k / 40 < p ? DATA : '#dceefb'}"></div>`;
+    }).join('');
+    return `
+      <div class="abs" style="left:80px;top:40px;width:620px;height:350px;border-radius:20px;overflow:hidden;background:linear-gradient(160deg,#3e6e96,#16181c)">
+        <img src="../public/mascot-logo.png" class="abs" style="left:50%;top:30px;height:250px;transform:translateX(-50%)"/>
+        <div class="abs" style="left:0;right:0;bottom:22px;text-align:center"><span style="display:inline-block;max-width:540px;padding:6px 14px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff;font-family:Arial;font-weight:700;font-size:26px;line-height:1.25;text-shadow:0 2px 0 #000">${esc(d.cues[i])}</span></div>
+        <div class="abs" style="left:0;bottom:0;height:6px;width:${p * 100}%;background:${RED}"></div>
+      </div>${bars}`;
+  },
+
+  // Generated posts appear as cards
+  posts(p, d) {
+    return d.posts.map(([net, text], i) => {
+      const a = eo(seg(p, 0.08 + i * 0.25, 0.3 + i * 0.25));
+      return `<div class="abs" style="left:60px;top:${40 + i * 160}px;width:660px;height:140px;border-radius:22px;background:${CREAM};padding:18px 22px;opacity:${a};transform:translateY(${(1 - a) * 30}px)">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:16px;font-weight:800;letter-spacing:.08em;color:${DEEP}">${esc(net.toUpperCase())}</span>
+        <span class="chip" style="height:36px;padding:0 16px;font-size:17px;background:#fff;border:2px solid ${INK}">${p > 0.85 && i === 0 ? '✓ Copiado' : 'Copiar'}</span></div>
+        <div style="margin-top:10px;font-size:20px;line-height:1.35">${esc(typed(text, seg(p, 0.12 + i * 0.25, 0.4 + i * 0.25)))}</div></div>`;
+    }).join('');
+  },
+
+  // Product copy: photo on the left, title and bullets typed on the right
+  productCopy(p, d) {
+    const bullets = d.bullets.map((b, i) => {
+      const a = eo(seg(p, 0.35 + i * 0.13, 0.48 + i * 0.13));
+      return `<div style="margin-top:10px;font-size:19px;opacity:${a};transform:translateX(${(1 - a) * 20}px)"><span style="color:${DEEP};font-weight:800">•</span> ${esc(b)}</div>`;
+    }).join('');
+    return `
+      <div class="abs" style="left:50px;top:60px;width:250px;height:330px;border-radius:22px;background:${CREAM};display:flex;align-items:center;justify-content:center;font-size:140px">${d.emoji}</div>
+      <div class="abs" style="left:330px;top:56px;width:410px">
+        <div style="font-size:15px;font-weight:800;letter-spacing:.08em;color:${DEEP}">TÍTULO</div>
+        <div class="display" style="margin-top:6px;font-size:25px;font-weight:700;line-height:1.2;min-height:90px">${esc(typed(d.title, seg(p, 0.06, 0.32)))}</div>
+        <div style="margin-top:8px;font-size:15px;font-weight:800;letter-spacing:.08em;color:${DEEP};opacity:${seg(p, 0.32, 0.36)}">PUNTOS CLAVE</div>${bullets}
+      </div>`;
+  },
+
+  // A document whose lines change language one by one
+  translate(p, d) {
+    const rows = d.lines.map(([from, to], i) => {
+      const a = seg(p, 0.1 + i * 0.15, 0.25 + i * 0.15);
+      return `<div style="margin-top:16px;height:30px;font-size:21px;position:relative">
+        <span style="position:absolute;opacity:${1 - a};transform:translateY(${-a * 10}px)">${esc(from)}</span>
+        <span style="position:absolute;opacity:${a};transform:translateY(${(1 - a) * 10}px);color:${i === 0 ? INK : '#16181ccc'};font-weight:${i === 0 ? 800 : 600}">${esc(to)}</span></div>`;
+    }).join('');
+    return `
+      <div class="abs" style="left:150px;top:30px;width:480px;height:360px;border-radius:12px;background:#fff;border:2px solid #e8e2da;padding:30px 36px">
+        <div style="font-family:Fredoka;font-weight:700;color:#2b579a;font-size:18px">W · contrato.docx</div>${rows}</div>
+      <div class="chip abs" style="left:250px;top:330px;width:280px;height:48px;font-size:21px;background:${INK};color:${BLUE};opacity:${seg(p, 0.75, 0.82)}">Español → Inglés ✓</div>
+      <div class="btn abs" style="left:230px;top:410px;width:320px;height:66px;font-size:25px;opacity:${seg(p, 0.8, 0.88)}">${icon('down', 26, '#fff')} Descargar Word</div>`;
+  },
+
+  // Blurry/pixelated "before" vs sharp "after" with a slider (persistent #en element)
+  enhance(p) {
+    const w = eio(seg(p, 0.15, 0.7));
+    document.getElementById('en').style.display = 'block';
+    document.getElementById('en-after').style.clipPath = `inset(0 ${100 - w * 100}% 0 0)`;
+    document.getElementById('en-line').style.left = `${w * 350 - 3}px`;
+    document.getElementById('en-line').style.opacity = w > 0 && w < 1 ? 1 : 0;
+    return `
+      <div class="abs display" style="left:0;right:0;top:34px;text-align:center;font-size:28px;font-weight:700">La IA la amplía ×2 y la enfoca</div>
+      <div class="chip abs" style="left:215px;top:458px;width:150px;height:44px;font-size:20px;background:${INK};color:${BLUE};opacity:${seg(p, 0.2, 0.3)}">Mejorada</div>
+      <div class="chip abs" style="left:415px;top:458px;width:150px;height:44px;font-size:20px;background:${CREAM};opacity:${1 - seg(p, 0.6, 0.7)}">Original</div>`;
+  },
+};
+
+// ---------- Tool scripts ----------
+const SCENES = {
+  convertidor: {
+    name: 'Convertidor gratis',
+    title: '¿Cómo convertir archivos gratis?',
+    steps: [
+      ['Sube tu archivo', 'upload', { file: 'foto.heic', size: '2,4 MB · iPhone' }],
+      ['Elige el formato', 'choose', { label: 'Convertir a', options: ['JPG', 'PNG', 'WEBP', 'PDF'], pick: 0, button: 'Convertir a JPG' }],
+      ['¡Descárgalo al instante!', 'result', { file: 'foto.jpg · 1,1 MB', button: 'Descargar' }],
+    ],
+  },
+  'convertidor-pro': {
+    name: 'Convertidor Pro',
+    title: '¿Cómo convertir y comprimir videos?',
+    steps: [
+      ['Sube hasta 50 archivos', 'batch', { files: [['viaje.mov', 'MP4'], ['clase.mp4', 'MP3'], ['saludo.mp4', 'GIF']] }],
+      ['Comprime tus videos', 'compress', { title: 'Comprimir video para WhatsApp', from: 18.4, to: 1.1, badge: '720p · listo para enviar' }],
+      ['Descarga todo en un ZIP', 'result', { title: '¡3 archivos listos!', file: 'convertidos.zip', button: 'Descargar ZIP', zip: true }],
+    ],
+  },
+  'quitar-fondo': {
+    name: 'Quitar fondo',
+    title: '¿Cómo quitar el fondo de una imagen?',
+    steps: [
+      ['Sube tu foto', 'upload', { file: 'producto.jpg', size: '3,2 MB' }],
+      ['La IA borra el fondo', 'beforeAfter', {}],
+      ['Elige fondo y descarga', 'choose', { label: 'Fondo', options: ['Transparente', 'Blanco', 'Color'], pick: 0, chipW: 190, button: 'Descargar PNG' }],
+    ],
+  },
+  transcripcion: {
+    name: 'Audio a texto',
+    title: '¿Cómo pasar audio a texto?',
+    steps: [
+      ['Sube tu audio o video', 'upload', { file: 'reunion.m4a', size: '12:30 min' }],
+      ['Se transcribe solo', 'transcript', { lines: ['Hola a todos, empecemos con el presupuesto.', 'Las ventas subieron un 18 por ciento.', 'Mañana enviamos la propuesta final.'] }],
+      ['Descárgalo en Word o SRT', 'choose', { label: 'Descargar como', options: ['Word', 'TXT', 'SRT'], pick: 0, button: 'Descargar' }],
+    ],
+  },
+  'resumir-pdf': {
+    name: 'Resumir PDF',
+    title: '¿Cómo resumir un PDF con IA?',
+    steps: [
+      ['Sube tu PDF', 'upload', { file: 'informe.pdf', size: '20 páginas' }],
+      ['Recibe el resumen', 'summary', { points: ['Las ventas crecieron un 18 %', 'La región norte lideró el crecimiento', 'Recomienda renegociar la logística'] }],
+      ['Pregúntale al documento', 'chat', { title: 'Pregúntale al PDF', q: '¿Qué recomienda el informe?', a: 'Renegociar los contratos de logística y reforzar la campaña de fin de año (pág. 4).' }],
+    ],
+  },
+  cv: {
+    name: 'Generador de CV',
+    title: '¿Cómo hacer tu CV online?',
+    steps: [
+      ['Rellena tus datos', 'form', { fields: [['Nombre', 'Laura Gómez'], ['Puesto', 'Diseñadora gráfica'], ['Experiencia', 'Estudio Nube · 2021']] }],
+      ['Elige diseño y color', 'choose', { label: 'Diseño', options: ['Clásico', 'Moderno', 'Minimal'], pick: 1, chipW: 170, colors: [DATA, INK, RED, '#2f855a', '#6b46c1'], button: 'Descargar PDF' }],
+      ['Descarga tu CV y tu carta', 'result', { title: '¡CV listo!', file: 'CV Laura Gómez.pdf · carta incluida', button: 'Descargar' }],
+    ],
+  },
+  ahorro: {
+    name: 'Monchys Ahorro',
+    title: '¿Cómo controlar tus gastos?',
+    steps: [
+      ['Escribe tus gastos', 'chat', { title: 'Monchys Ahorro', q: 'gasté 120 en el súper', a: 'Anotado: $120 en Comida. Te quedan $180 de tu presupuesto.' }],
+      ['Mira en qué se va tu dinero', 'bars', { title: 'Gasto por categoría', rows: [{ name: 'Hogar', spent: 4500 }, { name: 'Comida', spent: 340, budget: 300 }, { name: 'Transporte', spent: 120, budget: 300 }] }],
+      ['¡Ahorra cada mes!', 'result', { title: '¡Meta cumplida!', file: 'Ahorrado este mes: $6.950', button: 'Ver resumen' }],
+    ],
+  },
+  diario: {
+    name: 'Diario emocional',
+    title: '¿Cómo llevar un diario emocional?',
+    steps: [
+      ['Elige cómo te sientes', 'mood', {}],
+      ['Escribe libremente', 'journal', { prompt: '¿Qué fue lo mejor de tu día?', text: 'Terminé un proyecto importante y salí a caminar al parque.' }],
+      ['Mira cómo cambia tu ánimo', 'moodChart', { values: [3, 4, 3, 2, 3, 4, 4, 5, 4, 3, 4, 5, 5, 4] }],
+    ],
+  },
+  reservas: {
+    name: 'Agenda de citas',
+    title: '¿Cómo agendar citas con IA?',
+    steps: [
+      ['Tus clientes eligen hora', 'calendar', {}],
+      ['O se lo piden al chatbot', 'chat', { title: 'Asistente de reservas', q: 'Quiero un corte mañana a las 5', a: '¡Listo, Marta! Tu corte quedó reservado mañana a las 17:00.' }],
+      ['Tú lo ves en tu agenda', 'result', { title: '¡Cita confirmada!', file: 'Corte de cabello · Mar 27, 17:00', button: 'Ver agenda' }],
+    ],
+  },
+  comprimir: {
+    name: 'Comprimir gratis',
+    title: '¿Cómo comprimir un PDF o una foto?',
+    steps: [
+      ['Sube tu PDF o foto', 'upload', { file: 'escaneo.pdf', size: '8,3 MB' }],
+      ['Monchys lo comprime', 'compress', { title: 'Compresión equilibrada', from: 8.3, to: 1.3, badge: '−84 % · listo para enviar' }],
+      ['¡Descárgalo gratis!', 'result', { file: 'escaneo-comprimido.pdf · 1,3 MB', button: 'Descargar' }],
+    ],
+  },
+  'editar-pdf': {
+    name: 'Editar PDF',
+    title: '¿Cómo firmar y editar un PDF?',
+    steps: [
+      ['Abre tu PDF', 'upload', { file: 'contrato.pdf', size: '3 páginas' }],
+      ['Escribe y firma', 'pdfSign', {}],
+      ['Ordena y descarga', 'pages', {}],
+    ],
+  },
+  subtitulos: {
+    name: 'Subtítulos',
+    title: '¿Cómo poner subtítulos a un video?',
+    steps: [
+      ['Sube tu video', 'upload', { file: 'reel-tienda.mp4', size: '0:45 · 38 MB' }],
+      ['Se escriben solos', 'subtitles', { cues: ['¡Hola! Bienvenidos a mi tienda.', 'Hoy les enseño los nuevos modelos.', 'Y tienen 20 % de descuento.'] }],
+      ['Descárgalo con subtítulos', 'choose', { label: 'Descargar como', options: ['SRT', 'VTT', 'Video MP4'], pick: 2, chipW: 170, button: 'Crear video' }],
+    ],
+  },
+  redes: {
+    name: 'Textos para redes',
+    title: '¿Cómo escribir posts para redes con IA?',
+    steps: [
+      ['Cuenta tu idea', 'journal', { prompt: '¿Qué quieres publicar?', text: 'Este sábado 2x1 en pizzas medianas de 6 a 9 pm.' }],
+      ['Elige redes y tono', 'choose', { label: 'Redes', options: ['Instagram', 'TikTok', 'Facebook'], pick: 0, chipW: 180, button: 'Escribir publicaciones' }],
+      ['Copia y publica', 'posts', { posts: [['Instagram', '¿Una pizza? Qué aburrido. ¿DOS? 🍕🍕 Este sábado 2x1 de 6 a 9 pm.'], ['TikTok', 'POV: descubres el 2x1 de los sábados 🍕 #pizza #2x1']] }],
+    ],
+  },
+  descripciones: {
+    name: 'Descripciones',
+    title: '¿Cómo describir un producto para vender?',
+    steps: [
+      ['Sube una foto', 'upload', { file: 'mochila.jpg', size: 'Foto del producto' }],
+      ['Monchys la describe', 'productCopy', { emoji: '🎒', title: 'Mochila Impermeable 25 L con Puerto USB', bullets: ['Tela resistente al agua', 'Bolsillo acolchado para laptop', 'Puerto USB para cargar el celular'] }],
+      ['Copia y vende', 'result', { title: '¡Listo para vender!', file: 'Título · descripción · palabras clave', button: 'Copiar todo' }],
+    ],
+  },
+  traductor: {
+    name: 'Traductor',
+    title: '¿Cómo traducir un documento Word o PDF?',
+    steps: [
+      ['Elige el idioma', 'choose', { label: 'Traducir al', options: ['Inglés', 'Francés', 'Portugués'], pick: 0, chipW: 180, button: 'Traducir al inglés' }],
+      ['Sube tu documento', 'upload', { file: 'contrato.docx', size: '6 páginas' }],
+      ['Recíbelo traducido', 'translate', { lines: [['Contrato de servicios', 'Service Agreement'], ['El cliente acepta pagar…', 'The client agrees to pay…'], ['Fecha de inicio: 1 de nov.', 'Start date: Nov 1'], ['Gracias por su confianza.', 'Thank you for your trust.']] }],
+    ],
+  },
+  'mejorar-fotos': {
+    name: 'Mejorar fotos',
+    title: '¿Cómo mejorar la calidad de una foto?',
+    steps: [
+      ['Sube tu foto', 'upload', { file: 'foto-whatsapp.jpg', size: '640 × 480' }],
+      ['La IA la mejora', 'enhance', {}],
+      ['Descárgala nítida', 'result', { title: '¡Foto mejorada!', file: 'foto-mejorada.jpg · 1280 × 960', button: 'Descargar' }],
+    ],
+  },
+};
+
+const tool = new URLSearchParams(location.search).get('tool') ?? 'convertidor';
+const scene = SCENES[tool];
+window.TOOLS = Object.keys(SCENES);
+window.SCENE_INFO = { title: scene.title, name: scene.name };
+
+// ---------- Mascot ----------
+const mascot = document.getElementById('mascot');
+const lids = mascot.querySelectorAll('.lid');
+const lips = mascot.querySelectorAll('.lip');
+
+function drawMascot(t) {
+  // Where it stands: intro (center-left), steps (left), outro (center)
+  const stepsStart = INTRO, outroStart = INTRO + 3 * STEP;
+  const toLeft = eio(seg(t, stepsStart - 0.5, stepsStart + 0.1));
+  const toCenter = eio(seg(t, outroStart - 0.1, outroStart + 0.5));
+  let cx = lerp(lerp(330, 205, toLeft), 640, toCenter);
+  let size = lerp(lerp(300, 230, toLeft), 260, toCenter);
+  let bottom = lerp(lerp(640, 690, toLeft), 600, toCenter);
+
+  // Entrance hop from below
+  const enter = back(seg(t, 0, 0.7));
+  bottom += (1 - enter) * 420;
+
+  // Little hop at the start of each step, happy bounce in the outro
+  let hop = 0;
+  for (let i = 0; i < 3; i++) hop += Math.sin(Math.PI * seg(t, stepsStart + i * STEP, stepsStart + i * STEP + 0.45)) * 34;
+  if (t > outroStart + 0.5) hop += Math.abs(Math.sin((t - outroStart) * 7)) * 22 * (1 - seg(t, DURATION - 0.6, DURATION));
+  const breathe = 1 + 0.012 * Math.sin(t * 2.2);
+  const tilt = t > outroStart + 0.5 ? Math.sin((t - outroStart) * 7) * 4 : 0;
+
+  const h = size * (568 / 411);
+  mascot.style.width = `${size}px`;
+  mascot.style.left = `${cx - size / 2}px`;
+  mascot.style.top = `${bottom - h - hop}px`;
+  mascot.style.transform = `scale(${breathe}, ${2 - breathe}) rotate(${tilt}deg)`;
+
+  // Blink every ~3.1 s
+  const bp = (t + 0.4) % 3.1;
+  const blink = bp < 0.16 ? Math.sin((bp / 0.16) * Math.PI) : 0;
+  lids.forEach((l) => (l.style.transform = `scaleY(${blink})`));
+
+  // Chomp: when a result appears and twice in the outro
+  let chomp = 0;
+  for (const c of [stepsStart + 2 * STEP + 0.35, outroStart + 0.7, outroStart + 1.1]) chomp = Math.max(chomp, Math.sin(Math.PI * seg(t, c, c + 0.32)));
+  lips.forEach((l) => (l.style.transform = `scaleY(${chomp})`));
+}
+
+// ---------- Frame ----------
+const overlay = document.getElementById('overlay');
+const stage = document.getElementById('stage');
+const stageDyn = document.getElementById('stage-dyn');
+const ba = document.getElementById('ba');
+
+window.renderAt = function renderAt(t) {
+  ba.style.display = 'none';
+  document.getElementById('en').style.display = 'none';
+  drawMascot(t);
+  const outroStart = INTRO + 3 * STEP;
+  let html = '';
+
+  // Brand mark
+  html += `<div class="abs display" style="left:44px;top:30px;font-size:26px;font-weight:700;opacity:${seg(t, 1.6, 2.2) * (1 - seg(t, outroStart, outroStart + 0.3))}">Monchys IA</div>`;
+
+  // Intro title
+  if (t < INTRO + 0.3) {
+    const a = eo(seg(t, 0.35, 1.0)), out = seg(t, INTRO - 0.3, INTRO + 0.2);
+    html += `<div class="abs" style="left:560px;top:230px;width:660px;opacity:${a * (1 - out)};transform:translateX(${(1 - a) * 60 - out * 40}px)">
+      <div class="chip" style="height:44px;padding:0 20px;font-size:20px;background:#dceefb;color:${DEEP}">Cómo funciona · 3 pasos</div>
+      <div class="display" style="margin-top:20px;font-size:64px;font-weight:700;line-height:1.05">${esc(scene.title)}</div></div>`;
+  }
+
+  // Steps: stage card + caption bubble
+  const inSteps = t >= INTRO - 0.2 && t < outroStart + 0.3;
+  const cardIn = back(seg(t, INTRO - 0.2, INTRO + 0.35)), cardOut = seg(t, outroStart - 0.1, outroStart + 0.25);
+  stage.style.opacity = inSteps ? cardIn * (1 - cardOut) : 0;
+  stage.style.transform = `scale(${0.85 + 0.15 * cardIn - cardOut * 0.1})`;
+  let dyn = '';
+  if (inSteps) {
+    const i = clamp(Math.floor((t - INTRO) / STEP), 0, 2);
+    const local = clamp((t - INTRO - i * STEP) / STEP);
+    const [caption, kind, data] = scene.steps[i];
+    dyn = `<div class="abs" style="inset:0;opacity:${fade(local)}">${P[kind](local, data)}</div>`;
+    const pop = back(seg(local, 0, 0.18));
+    html += `<div class="abs card" style="left:40px;top:140px;width:370px;padding:22px 26px;transform:scale(${pop});transform-origin:30% 100%;opacity:${(1 - cardOut)}">
+        <div style="display:flex;align-items:center;gap:12px"><div class="hex" style="width:48px;height:48px;background:${RED};color:#fff;font-family:Fredoka;font-weight:700;font-size:26px">${i + 1}</div><div style="font-size:18px;font-weight:800;color:${DEEP};letter-spacing:.08em">PASO ${i + 1} DE 3</div></div>
+        <div class="display" style="margin-top:12px;font-size:36px;font-weight:700;line-height:1.1">${esc(caption)}</div>
+        <div class="abs" style="left:120px;bottom:-16px;width:32px;height:32px;background:#fff;transform:rotate(45deg)"></div></div>`;
+  }
+  stageDyn.innerHTML = dyn;
+
+  // Outro
+  if (t >= outroStart) {
+    const a = eo(seg(t, outroStart + 0.4, outroStart + 1.0));
+    html += `<div class="abs" style="left:0;right:0;top:56px;text-align:center;opacity:${a};transform:translateY(${(1 - a) * 30}px)">
+      <div class="display" style="font-size:60px;font-weight:700">¡Así de fácil!</div>
+      <div class="display" style="margin-top:8px;font-size:30px;font-weight:600;color:${DEEP}">Pruébalo ahora en Monchys IA</div></div>
+      <div class="btn abs" style="left:440px;top:628px;width:400px;height:64px;font-size:27px;opacity:${seg(t, outroStart + 0.9, outroStart + 1.3)};transform:scale(${back(seg(t, outroStart + 0.9, outroStart + 1.4))})">${esc(scene.name)}</div>`;
+  }
+  overlay.innerHTML = html;
+};
+
+window.ready = (async () => {
+  // Fonts load lazily, so request every weight used before the first frame
+  await Promise.all(['500 40px Fredoka', '600 40px Fredoka', '700 40px Fredoka', '600 20px Nunito', '700 20px Nunito', '800 20px Nunito'].map((f) => document.fonts.load(f)));
+  await document.fonts.ready;
+  await Promise.all([...document.images].map((img) => (img.complete ? null : new Promise((r) => (img.onload = img.onerror = r)))));
+  await Promise.all([...document.images].map((img) => img.decode().catch(() => {})));
+  renderAt(0);
+  return true;
+})();
+</script>
+</body>
+</html>

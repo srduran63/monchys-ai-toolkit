@@ -1,0 +1,28 @@
+[
+  {
+    "id": "demo",
+    "name": "Barbería Monchys (demo)",
+    "description": "Barbería de demostración para probar el asistente de reservas.",
+    "timezone": "America/Mexico_City",
+    "slotMinutes": 30,
+    "hours": [
+      [],
+      [["10:00", "14:00"], ["16:00", "20:00"]],
+      [["10:00", "14:00"], ["16:00", "20:00"]],
+      [["10:00", "14:00"], ["16:00", "20:00"]],
+      [["10:00", "14:00"], ["16:00", "20:00"]],
+      [["10:00", "20:00"]],
+      [["09:00", "15:00"]]
+    ],
+    "services": [
+      { "id": "corte1", "name": "Corte de cabello", "minutes": 30, "price": 15 },
+      { "id": "barba1", "name": "Arreglo de barba", "minutes": 30, "price": 10 },
+      { "id": "combo1", "name": "Corte + barba", "minutes": 60, "price": 22 },
+      { "id": "nino01", "name": "Corte infantil", "minutes": 30, "price": 12 }
+    ],
+    "faq": "Estamos en Av. Principal 123, local 4. Aceptamos efectivo y tarjeta. Si llegas más de 10 minutos tarde, puede que tengamos que reprogramar tu cita. Hay estacionamiento gratuito en la plaza.",
+    "active": true,
+    "bookings": [],
+    "createdAt": "2026-10-25T00:00:00.000Z"
+  }
+]

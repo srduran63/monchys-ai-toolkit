@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+server/data/
+.models
+*.p8
+
+# Local Netlify folder
+.netlify

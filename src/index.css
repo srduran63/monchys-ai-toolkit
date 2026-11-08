@@ -1,0 +1,268 @@
+@import "tailwindcss";
+
+/* Palette sampled from the mascot */
+@theme {
+  --color-blob: #9fcdf2;       /* body */
+  --color-blob-soft: #dceefb;
+  --color-blob-deep: #3e6e96;  /* readable blue for text */
+  --color-mouth: #e5231b;      /* mouth */
+  --color-mouth-dark: #b3170f;
+  --color-cream: #fff6ec;      /* teeth */
+  --color-ink: #16181c;        /* eyes */
+  --color-coal: #24272d;       /* backdrop */
+  --color-data: #3a86d1;       /* chart marks (validated: chroma + 3:1 contrast on white) */
+
+  --font-display: "Fredoka", ui-rounded, system-ui, sans-serif;
+  --font-sans: "Nunito", ui-rounded, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-slide-in: slideIn 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+  --animate-pop-in: popIn 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+}
+
+/* ---------- Responsive system ----------
+   Breakpoints: móvil < 640 (sm) · tableta 640–1023 (sm/md) · escritorio ≥ 1024 (lg).
+   Fluid type: sizes grow smoothly with the viewport instead of jumping at breakpoints. */
+@utility text-fluid-hero {
+  font-size: clamp(2rem, 1.35rem + 2.6vw, 3.25rem);
+  line-height: 1.05;
+}
+@utility text-fluid-h1 {
+  font-size: clamp(1.75rem, 1.35rem + 1.6vw, 2.5rem);
+  line-height: 1.1;
+}
+@utility text-fluid-h2 {
+  font-size: clamp(1.5rem, 1.25rem + 1vw, 2rem);
+  line-height: 1.15;
+}
+@utility text-fluid-lead {
+  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.125rem);
+}
+/* Page container: same max width everywhere, side padding grows with the screen */
+@utility page {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 0.5rem + 2vw, 2rem);
+}
+
+/* Touch screens: every control is at least 44 × 44 px (WCAG 2.5.5 / Google mobile guidance) */
+@media (pointer: coarse) {
+  button,
+  select,
+  summary,
+  a.btn {
+    min-height: 44px;
+  }
+  button[aria-label] {
+    min-width: 44px;
+  }
+}
+
+/* Soft "vinyl toy" shadows */
+@utility shadow-toy {
+  box-shadow: 0 4px 0 0 rgb(22 24 28 / 0.08), 0 14px 28px -12px rgb(22 24 28 / 0.25);
+}
+@utility shadow-toy-lg {
+  box-shadow: 0 6px 0 0 rgb(22 24 28 / 0.1), 0 24px 48px -16px rgb(22 24 28 / 0.4);
+}
+
+/* The hexagon badge on the mascot's belly */
+@utility hex {
+  clip-path: polygon(25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%, 0% 50%);
+}
+
+/* Chunky pressable buttons */
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
+  &:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: none;
+  }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+@utility btn-red {
+  background: var(--color-mouth);
+  color: #fff;
+  box-shadow: 0 4px 0 0 var(--color-mouth-dark);
+  &:hover:not(:disabled) {
+    background: #f0352d;
+  }
+}
+@utility btn-blue {
+  background: var(--color-blob);
+  color: var(--color-ink);
+  box-shadow: 0 4px 0 0 #6fa3cc;
+  &:hover:not(:disabled) {
+    background: #b3d8f5;
+  }
+}
+@utility btn-dark {
+  background: var(--color-ink);
+  color: #fff;
+  box-shadow: 0 4px 0 0 #000;
+  &:hover:not(:disabled) {
+    background: var(--color-coal);
+  }
+}
+@utility btn-ghost {
+  background: #fff;
+  color: var(--color-ink);
+  border: 2px solid var(--color-ink);
+  &:hover:not(:disabled) {
+    background: var(--color-blob-soft);
+  }
+}
+
+/* ---------- Mascot animation ---------- */
+.mascot-lid {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(#abd2ee, #92b9d7);
+  transform-origin: 50% 0;
+  transform: scaleY(0);
+  animation: blink 5s infinite;
+}
+.mascot-breathe {
+  transform-origin: 50% 92%;
+  animation: breathe 3.2s ease-in-out infinite;
+}
+.mascot-hop {
+  transform-origin: 50% 100%;
+  animation: hop 0.55s cubic-bezier(0.3, 0.8, 0.4, 1);
+}
+@keyframes blink {
+  0%, 90%, 100% { transform: scaleY(0); }
+  93%, 95% { transform: scaleY(1); }
+}
+.mascot-mouth {
+  position: absolute;
+  overflow: hidden;
+  border-radius: 30% / 40%;
+  pointer-events: none;
+}
+.mascot-lip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 51%;
+  transform: scaleY(0);
+}
+.mascot-lip-top {
+  top: 0;
+  height: 75%; /* overlaps the curved bottom lip so no red shows at the corners */
+  transform-origin: 50% 0;
+  background: linear-gradient(#93bbdb, #a3cbea);
+}
+.mascot-lip-bottom {
+  bottom: 0;
+  transform-origin: 50% 100%;
+  background: linear-gradient(#a0c8e8, #a7ceee);
+  border-radius: 50% 50% 0 0 / 12% 12% 0 0;
+  box-shadow: inset 0 2px 1px rgb(50 80 105 / 0.55);
+}
+.mascot-chomp {
+  transform-origin: 50% 100%;
+  animation: chomp 0.16s ease-out;
+}
+.mascot-chomp .mascot-lip {
+  animation: lip 0.16s ease-out;
+}
+.mascot-chewing {
+  transform-origin: 50% 100%;
+  animation: chew 0.34s ease-in-out infinite;
+}
+.mascot-chewing .mascot-lip {
+  animation: lip 0.34s ease-in-out infinite;
+}
+@keyframes chomp {
+  0%, 100% { transform: scale(1, 1); }
+  45% { transform: scale(1.1, 0.86); }
+}
+@keyframes chew {
+  0%, 100% { transform: scale(1, 1) rotate(0); }
+  25% { transform: scale(1.03, 0.97) rotate(-2deg); }
+  50% { transform: scale(1.06, 0.93) rotate(0); }
+  75% { transform: scale(1.03, 0.97) rotate(2deg); }
+}
+@keyframes lip {
+  0%, 100% { transform: scaleY(0); }
+  45%, 60% { transform: scaleY(1); }
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.015, 0.985); }
+}
+@keyframes hop {
+  0% { transform: translateY(0) scale(1, 1); }
+  20% { transform: translateY(0) scale(1.06, 0.92); }
+  50% { transform: translateY(-14%) scale(0.96, 1.05); }
+  80% { transform: translateY(0) scale(1.04, 0.96); }
+  100% { transform: none; }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Printing a CV or cover letter: only the .print-area portal is printed, at A4 size */
+.print-area {
+  display: none;
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  body {
+    background: #fff;
+  }
+  body:has(.print-area) > #root {
+    display: none;
+  }
+  .print-area {
+    display: block;
+    width: 210mm;
+  }
+  .print-area,
+  .print-area * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot-lid,
+  .mascot-breathe,
+  .mascot-hop,
+  .mascot-chomp,
+  .mascot-chewing,
+  .mascot-lip,
+  .animate-marquee {
+    animation: none !important;
+  }
+}
