@@ -1,8 +1,8 @@
-# Monchys AI — Subscription AI Toolkit
+﻿# Monchys AI — Subscription AI Toolkit
 
 Full-stack SaaS that sells AI-powered productivity tools on a subscription model: customer accounts, monthly plans, one screen per tool, Stripe billing, an admin panel, and per-customer AI cost control.
 
-🇪🇸 [Leer en español](README.es.md)
+**🌐 Live demo: [monchys-ia.fly.dev](https://monchys-ia.fly.dev)** · 🇪🇸 [Leer en español](README.es.md)
 
 ## Highlights
 
